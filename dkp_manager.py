@@ -167,18 +167,7 @@ if selected_page == "Ranking":
 elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
-    with col2:
-        if st.button("🔐 Passwort generieren"):
-            st.session_state.generated_password = generate_password()
-            st.experimental_rerun()
-        if st.session_state.get("generated_password"):
-            st.code(st.session_state.generated_password, language="text")
-            st.button("📋 Passwort kopieren", on_click=st.success, args=("Passwort kopiert!",))
-
+    new_pass = st.text_input("Standardpasswort")
     new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
     if st.button("Nutzer erstellen"):
