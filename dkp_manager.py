@@ -102,6 +102,12 @@ if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
+# Navigation
+pages = ["Ranking"]
+if user['is_admin']:
+    pages.append("Admin")
+selected_page = st.sidebar.radio("🔍 Navigation", pages)
+
 st.title("🛡️ DKP System - Throne & Liberty")
 
 # Passwort & Ingame-Namen ändern
@@ -116,8 +122,32 @@ with st.expander("🔑 Einstellungen"):
         update_ingame_name(user['username'], new_ingame)
         st.success("Ingame-Name aktualisiert")
 
-# Admin-Bereich
-if user['is_admin']:
+# Seiteninhalt
+if selected_page == "Ranking":
+    st.header("📋 Mein DKP")
+    my_dkp = get_dkp(user['username'])
+    my_ingame = get_user(user['username']).get("ingame_name", "")
+    st.write(f"💠 Aktueller Stand: **{my_dkp['points']} DKP**")
+    if my_ingame:
+        st.write(f"🎮 Ingame-Name: **{my_ingame}**")
+
+    st.header("📊 DKP Rangliste")
+    dkp_list = dkp_table.all()
+    user_dict = {u['username']: u.get('ingame_name', '') for u in users_table.all()}
+    df = pd.DataFrame([{ "Benutzer": d["username"], "Ingame-Name": user_dict.get(d["username"], "-"), "DKP": d["points"] } for d in dkp_list])
+    df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
+    df.index += 1
+
+    highlight_index = df[df["Benutzer"] == user["username"]].index[0] + 1
+    st.markdown(f"🏅 **Dein Rang:** Platz {highlight_index} von {len(df)}")
+    st.dataframe(df, use_container_width=True)
+
+    st.subheader("📜 Verlauf")
+    for entry in reversed(my_dkp['history'][-20:]):
+        ts = datetime.fromisoformat(entry['timestamp']).strftime('%d.%m.%Y %H:%M')
+        st.write(f"[{ts}] {entry['by']} -> {entry['points']} Punkte ({'vergeben' if entry['points'] >= 0 else 'abgezogen'})")
+
+elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
     new_pass = st.text_input("Standardpasswort")
@@ -148,28 +178,3 @@ if user['is_admin']:
             delete_user(target_user)
             st.success(f"Spieler '{target_user}' gelöscht")
             st.experimental_rerun()
-
-# Spieleransicht
-st.header("📋 Mein DKP")
-my_dkp = get_dkp(user['username'])
-my_ingame = get_user(user['username']).get("ingame_name", "")
-st.write(f"💠 Aktueller Stand: **{my_dkp['points']} DKP**")
-if my_ingame:
-    st.write(f"🎮 Ingame-Name: **{my_ingame}**")
-
-# Rangliste aller Spieler
-st.header("📊 DKP Rangliste")
-dkp_list = dkp_table.all()
-user_dict = {u['username']: u.get('ingame_name', '') for u in users_table.all()}
-df = pd.DataFrame([{ "Benutzer": d["username"], "Ingame-Name": user_dict.get(d["username"], "-"), "DKP": d["points"] } for d in dkp_list])
-df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
-df.index += 1
-
-highlight_index = df[df["Benutzer"] == user["username"]].index[0] + 1
-st.markdown(f"🏅 **Dein Rang:** Platz {highlight_index} von {len(df)}")
-st.dataframe(df, use_container_width=True)
-
-st.subheader("📜 Verlauf")
-for entry in reversed(my_dkp['history'][-20:]):
-    ts = datetime.fromisoformat(entry['timestamp']).strftime('%d.%m.%Y %H:%M')
-    st.write(f"[{ts}] {entry['by']} -> {entry['points']} Punkte ({'vergeben' if entry['points'] >= 0 else 'abgezogen'})")
