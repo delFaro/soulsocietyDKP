@@ -13,7 +13,6 @@ users_table = db.table('users')
 dkp_table = db.table('dkp')
 
 # Hilfsfunktionen
-
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
 
@@ -79,7 +78,14 @@ def generate_password(length=10):
 if 'user' not in st.session_state:
     st.session_state.user = None
 
-# 🛠️ Initial Setup - Admin anlegen, falls keine User existieren
+# Delfaro einmalig zum Superadmin machen
+if users_table.contains(Query().username == 'delfaro'):
+    delfaro = users_table.get(Query().username == 'delfaro')
+    if not delfaro.get('superadmin_granted', False):
+        users_table.update({'is_admin': True, 'superadmin_granted': True}, Query().username == 'delfaro')
+        st.info("✅ 'delfaro' wurde einmalig zum Superadmin ernannt.")
+
+# Erst-Setup
 if len(users_table) == 0:
     st.title("🚀 Erst-Setup: Admin-Account anlegen")
     admin_user = st.text_input("Admin Benutzername")
@@ -106,22 +112,19 @@ if not st.session_state.user:
             st.error("Login fehlgeschlagen")
     st.stop()
 
-# App nach Login
 user = st.session_state.user
 st.sidebar.write(f"👋 Eingeloggt als: {user['username']} ({'Admin' if user['is_admin'] else 'Spieler'})")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
-# Navigation
 pages = ["Ranking"]
 if user['is_admin']:
     pages.append("Admin")
 selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
-st.title("🛡️ Soul ツ Society - DKP")
+st.title("🛡️ DKP System - Throne & Liberty")
 
-# Passwort, Ingame-Namen, Klasse & Gearscore ändern
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
@@ -139,7 +142,6 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
-# Seiteninhalt
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
     my_dkp = get_dkp(user['username'])
@@ -163,7 +165,6 @@ if selected_page == "Ranking":
     } for u in dkp_list])
     df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
     df.index += 1
-
     st.dataframe(df, use_container_width=True)
 
     st.subheader("📜 Verlauf")
@@ -186,21 +187,42 @@ elif selected_page == "Admin" and user['is_admin']:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
 
     st.subheader("🔧 DKP Verwalten")
-    all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
-    target_user = st.selectbox("Spieler auswählen", all_users)
+    ingame_user_map = {
+        u['ingame_name'] + f" ({u['username']})" if u.get('ingame_name') else u['username']: u['username']
+        for u in users_table.all() if u['username'] != user['username']
+    }
+    ingame_names_sorted = sorted(ingame_user_map.keys())
+    selected_ingame_display = st.selectbox("DKP-Zielspieler (Ingame-Name)", ingame_names_sorted, key="dkp_select")
+    target_user = ingame_user_map[selected_ingame_display]
+
     points = st.number_input("Punkte (positiv/negativ)", value=0, key="dkp_change")
     if st.button("Anwenden", key="change_dkp"):
         update_dkp(target_user, points, user['username'])
         st.success(f"{points} Punkte bei {target_user} geändert")
 
-    st.subheader("🔁 Passwort zurücksetzen & 🗑️ Spieler löschen")
-    reset_pass = st.text_input("Neues Passwort für Spieler", key="reset_pass")
-    if st.button("Passwort zurücksetzen"):
-        update_password(target_user, reset_pass)
-        st.success(f"Passwort von '{target_user}' zurückgesetzt")
+    if user['username'] == 'superadmin':
+        st.subheader("🛡️ Adminrechte verwalten")
+        admin_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != 'superadmin']
+        selected_admin_target = st.selectbox("Nutzer für Adminrechte-Auswahl", admin_candidates, key="admin_target_select")
+        admin_target = ingame_user_map[selected_admin_target]
+        if st.button("Adminrechte entziehen"):
+            users_table.update({'is_admin': False}, Query().username == admin_target)
+            st.success(f"Adminrechte von '{admin_target}' wurden entfernt")
+
+    st.subheader("⭐ Adminrechte vergeben")
+    selected_admin_promote = st.selectbox("Spieler zu Admin machen", ingame_names_sorted, key="admin_promote_select")
+    promote_target = ingame_user_map[selected_admin_promote]
+    if st.button("Zum Admin ernennen"):
+        users_table.update({'is_admin': True}, Query().username == promote_target)
+        st.success(f"'{promote_target}' ist jetzt Admin")
+
+    st.subheader("🔁 Spieler löschen")
+    deletable_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != 'superadmin']
+    selected_ingame_reset = st.selectbox("Spieler auswählen", deletable_candidates, key="pw_reset_select")
+    reset_target = ingame_user_map[selected_ingame_reset]
 
     if st.checkbox("⚠️ Spieler wirklich löschen?"):
         if st.button("❌ Spieler löschen"):
-            delete_user(target_user)
-            st.success(f"Spieler '{target_user}' gelöscht")
+            delete_user(reset_target)
+            st.success(f"Spieler '{reset_target}' gelöscht")
             st.experimental_rerun()
