@@ -123,9 +123,31 @@ if user['is_admin']:
     pages.append("Admin")
 selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
-st.title("🛡️ Soul ツ Society - DKP BETA")
+st.title("🛡️ DKP System - Throne & Liberty")
 
 with st.expander("🔑 Einstellungen"):
+    new_pw = st.text_input("Neues Passwort", type="password")
+    if st.button("Passwort ändern"):
+        update_password(user['username'], new_pw)
+        st.success("Passwort aktualisiert")
+
+    new_ingame = st.text_input("Neuer Ingame-Name")
+    if st.button("Ingame-Name ändern"):
+        update_ingame_name(user['username'], new_ingame)
+        st.success("Ingame-Name aktualisiert")
+
+    new_class = st.text_input("Klasse")
+    new_score = st.text_input("Gearscore")
+    if st.button("Klasse & Gearscore speichern"):
+        update_class_and_gearscore(user['username'], new_class, new_score)
+        st.success("Klasse & Gearscore aktualisiert")
+
+    wish_item = st.text_input("🎯 Wunschitem (Name, Link oder Info)")
+    if st.button("Wunschitem speichern"):
+        user_data = get_user(user['username'])
+        user_data['wish'] = wish_item
+        users_table.update(user_data, Query().username == user['username'])
+        st.success("Wunschitem gespeichert")
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
         update_password(user['username'], new_pw)
@@ -152,7 +174,9 @@ if selected_page == "Ranking":
     if my_user.get("class"):
         st.write(f"🧙 Klasse: **{my_user['class']}**")
     if my_user.get("gearscore"):
-        st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
+    st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
+if my_user.get("wish"):
+    st.write(f"🎁 Wunschitem: {my_user['wish']}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
@@ -236,7 +260,8 @@ elif selected_page == "Admin" and user['is_admin']:
             "Rolle": "Admin" if u.get('is_admin') else "Spieler",
             "Klasse": u.get('class', ''),
             "Gearscore": u.get('gearscore', ''),
-            "DKP": dkp_data['points'] if dkp_data else 0
+            "DKP": dkp_data['points'] if dkp_data else 0,
+            "Itemwunsch": u.get('wish', '')
         })
     overview_df = pd.DataFrame(overview_data)
     st.dataframe(overview_df, use_container_width=True)
