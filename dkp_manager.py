@@ -123,7 +123,7 @@ if user['is_admin']:
     pages.append("Admin")
 selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
-st.title("🛡️ DKP System - Throne & Liberty")
+st.title("🛡️ Soul ツ Society - DKP BETA")
 
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
