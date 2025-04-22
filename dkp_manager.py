@@ -216,6 +216,22 @@ elif selected_page == "Admin" and user['is_admin']:
         users_table.update({'is_admin': True}, Query().username == promote_target)
         st.success(f"'{promote_target}' ist jetzt Admin")
 
+    st.subheader("📋 Alle Spieler im Überblick")
+    all_users = users_table.all()
+    overview_data = []
+    for u in all_users:
+        dkp_data = get_dkp(u['username'])
+        overview_data.append({
+            "Accountname": u['username'],
+            "Ingame-Name": u.get('ingame_name', ''),
+            "Rolle": "Admin" if u.get('is_admin') else "Spieler",
+            "Klasse": u.get('class', ''),
+            "Gearscore": u.get('gearscore', ''),
+            "DKP": dkp_data['points'] if dkp_data else 0
+        })
+    overview_df = pd.DataFrame(overview_data)
+    st.dataframe(overview_df, use_container_width=True)
+
     st.subheader("🔁 Spieler löschen")
     deletable_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != 'superadmin']
     selected_ingame_reset = st.selectbox("Spieler auswählen", deletable_candidates, key="pw_reset_select")
