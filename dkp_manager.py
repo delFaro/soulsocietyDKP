@@ -175,7 +175,7 @@ if selected_page == "Ranking":
         st.write(f"🧙 Klasse: **{my_user['class']}**")
     if my_user.get("gearscore"):
     st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
-if my_user.get("wish"):
+    if my_user.get("wish"):
     st.write("🎁 Wunschliste:")
     for w in my_user['wish']:
         st.write(f"– {w}")
