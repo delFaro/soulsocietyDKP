@@ -6,10 +6,13 @@ import pandas as pd
 import random
 import string
 
+# Datenbank-Datei
 DB_FILE = 'dkp_tinydb.json'
 db = TinyDB(DB_FILE)
 users_table = db.table('users')
 dkp_table = db.table('dkp')
+
+# Hilfsfunktionen
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -72,9 +75,11 @@ def generate_password(length=10):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
+# Session Management
 if 'user' not in st.session_state:
     st.session_state.user = None
 
+# 🛠️ Initial Setup - Admin anlegen, falls keine User existieren
 if len(users_table) == 0:
     st.title("🚀 Erst-Setup: Admin-Account anlegen")
     admin_user = st.text_input("Admin Benutzername")
@@ -87,6 +92,7 @@ if len(users_table) == 0:
             st.error("Benutzer existiert bereits")
     st.stop()
 
+# Login
 if not st.session_state.user:
     st.title("🔐 DKP Login")
     username = st.text_input("Benutzername")
@@ -100,12 +106,14 @@ if not st.session_state.user:
             st.error("Login fehlgeschlagen")
     st.stop()
 
+# App nach Login
 user = st.session_state.user
 st.sidebar.write(f"👋 Eingeloggt als: {user['username']} ({'Admin' if user['is_admin'] else 'Spieler'})")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
+# Navigation
 pages = ["Ranking"]
 if user['is_admin']:
     pages.append("Admin")
@@ -113,6 +121,7 @@ selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
 st.title("🛡️ DKP System - Throne & Liberty")
 
+# Passwort, Ingame-Namen, Klasse & Gearscore ändern
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
@@ -130,6 +139,7 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
+# Seiteninhalt
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
     my_dkp = get_dkp(user['username'])
@@ -164,17 +174,9 @@ if selected_page == "Ranking":
 elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
-    with col2:
-        if st.button("🔐 Passwort generieren", key="generate_pw"):
-            st.session_state.generated_password = generate_password()
-
-    if st.session_state.get("generated_password"):
-        st.code(st.session_state.generated_password, language="text")
-
+    if st.button("🔐 Passwort generieren"):
+        st.session_state.generated_password = generate_password()
+    new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
     new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
     if st.button("Nutzer erstellen"):
@@ -183,38 +185,22 @@ elif selected_page == "Admin" and user['is_admin']:
         else:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
 
-    st.subheader("📝 Ingame-Namen ändern")
-    all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
-    selected_user = st.selectbox("Spieler auswählen", all_users, key="ingame_select")
-    new_ingame_name = st.text_input("Neuer Ingame-Name für Spieler", key="new_ingame_admin")
-    if st.button("Ingame-Name ändern", key="update_ingame_admin"):
-        update_ingame_name(selected_user, new_ingame_name)
-        st.success(f"Ingame-Name für '{selected_user}' geändert auf '{new_ingame_name}'")
-
     st.subheader("🔧 DKP Verwalten")
-    ingame_user_map = {
-        u['ingame_name'] + f" ({u['username']})" if u.get('ingame_name') else u['username']: u['username']
-        for u in users_table.all() if u['username'] != user['username']
-    }
-    ingame_names_sorted = sorted(ingame_user_map.keys())
-    selected_ingame_display = st.selectbox("DKP-Zielspieler (Ingame-Name)", ingame_names_sorted, key="dkp_select")
-    target_user = ingame_user_map[selected_ingame_display]
-
+    all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
+    target_user = st.selectbox("Spieler auswählen", all_users)
     points = st.number_input("Punkte (positiv/negativ)", value=0, key="dkp_change")
     if st.button("Anwenden", key="change_dkp"):
         update_dkp(target_user, points, user['username'])
         st.success(f"{points} Punkte bei {target_user} geändert")
 
     st.subheader("🔁 Passwort zurücksetzen & 🗑️ Spieler löschen")
-    selected_ingame_reset = st.selectbox("Spieler auswählen", ingame_names_sorted, key="pw_reset_select")
-    reset_target = ingame_user_map[selected_ingame_reset]
     reset_pass = st.text_input("Neues Passwort für Spieler", key="reset_pass")
     if st.button("Passwort zurücksetzen"):
-        update_password(reset_target, reset_pass)
-        st.success(f"Passwort von '{reset_target}' zurückgesetzt")
+        update_password(target_user, reset_pass)
+        st.success(f"Passwort von '{target_user}' zurückgesetzt")
 
     if st.checkbox("⚠️ Spieler wirklich löschen?"):
         if st.button("❌ Spieler löschen"):
-            delete_user(reset_target)
-            st.success(f"Spieler '{reset_target}' gelöscht")
+            delete_user(target_user)
+            st.success(f"Spieler '{target_user}' gelöscht")
             st.experimental_rerun()
