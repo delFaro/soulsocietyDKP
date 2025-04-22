@@ -2,6 +2,7 @@ import streamlit as st
 from tinydb import TinyDB, Query
 from hashlib import sha256
 from datetime import datetime
+import pandas as pd
 
 # Datenbank-Datei
 DB_FILE = 'dkp_tinydb.json'
@@ -126,6 +127,17 @@ if user['is_admin']:
 st.header("📋 Mein DKP")
 my_dkp = get_dkp(user['username'])
 st.write(f"💠 Aktueller Stand: **{my_dkp['points']} DKP**")
+
+# Rangliste aller Spieler
+st.header("📊 DKP Rangliste")
+dkp_list = dkp_table.all()
+df = pd.DataFrame([{ "Spieler": d["username"], "DKP": d["points"] } for d in dkp_list])
+df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
+df.index += 1
+
+highlight_index = df[df["Spieler"] == user["username"]].index[0] + 1
+st.markdown(f"🏅 **Dein Rang:** Platz {highlight_index} von {len(df)}")
+st.dataframe(df, use_container_width=True)
 
 st.subheader("📜 Verlauf")
 for entry in reversed(my_dkp['history'][-20:]):
