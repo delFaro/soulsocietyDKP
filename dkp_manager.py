@@ -148,21 +148,6 @@ with st.expander("🔑 Einstellungen"):
         user_data['wish'] = wish_item
         users_table.update(user_data, Query().username == user['username'])
         st.success("Wunschitem gespeichert")
-    new_pw = st.text_input("Neues Passwort", type="password")
-    if st.button("Passwort ändern"):
-        update_password(user['username'], new_pw)
-        st.success("Passwort aktualisiert")
-
-    new_ingame = st.text_input("Neuer Ingame-Name")
-    if st.button("Ingame-Name ändern"):
-        update_ingame_name(user['username'], new_ingame)
-        st.success("Ingame-Name aktualisiert")
-
-    new_class = st.text_input("Klasse")
-    new_score = st.text_input("Gearscore")
-    if st.button("Klasse & Gearscore speichern"):
-        update_class_and_gearscore(user['username'], new_class, new_score)
-        st.success("Klasse & Gearscore aktualisiert")
 
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
