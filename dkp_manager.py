@@ -59,6 +59,19 @@ def update_dkp(username, amount, by_user):
 if 'user' not in st.session_state:
     st.session_state.user = None
 
+# 🛠️ Initial Setup - Admin anlegen, falls keine User existieren
+if len(users_table) == 0:
+    st.title("🚀 Erst-Setup: Admin-Account anlegen")
+    admin_user = st.text_input("Admin Benutzername")
+    admin_pass = st.text_input("Admin Passwort", type="password")
+    if st.button("Admin erstellen"):
+        if create_user(admin_user, admin_pass, is_admin=True):
+            st.success("Admin erfolgreich angelegt. Jetzt einloggen!")
+            st.stop()
+        else:
+            st.error("Benutzer existiert bereits")
+    st.stop()
+
 # Login
 if not st.session_state.user:
     st.title("🔐 DKP Login")
