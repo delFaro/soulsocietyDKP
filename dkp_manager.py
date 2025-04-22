@@ -6,13 +6,10 @@ import pandas as pd
 import random
 import string
 
-# Datenbank-Datei
 DB_FILE = 'dkp_tinydb.json'
 db = TinyDB(DB_FILE)
 users_table = db.table('users')
 dkp_table = db.table('dkp')
-
-# Hilfsfunktionen
 
 def hash_password(password):
     return sha256(password.encode()).hexdigest()
@@ -114,7 +111,7 @@ if user['is_admin']:
     pages.append("Admin")
 selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
-st.title("🛡️ Soul ツ Society - DKP")
+st.title("🛡️ DKP System - Throne & Liberty")
 
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
@@ -195,20 +192,29 @@ elif selected_page == "Admin" and user['is_admin']:
         st.success(f"Ingame-Name für '{selected_user}' geändert auf '{new_ingame_name}'")
 
     st.subheader("🔧 DKP Verwalten")
-    target_user = st.selectbox("DKP-Zielspieler", all_users, key="dkp_select")
+    ingame_user_map = {
+        u['ingame_name'] + f" ({u['username']})" if u.get('ingame_name') else u['username']: u['username']
+        for u in users_table.all() if u['username'] != user['username']
+    }
+    ingame_names_sorted = sorted(ingame_user_map.keys())
+    selected_ingame_display = st.selectbox("DKP-Zielspieler (Ingame-Name)", ingame_names_sorted, key="dkp_select")
+    target_user = ingame_user_map[selected_ingame_display]
+
     points = st.number_input("Punkte (positiv/negativ)", value=0, key="dkp_change")
     if st.button("Anwenden", key="change_dkp"):
         update_dkp(target_user, points, user['username'])
         st.success(f"{points} Punkte bei {target_user} geändert")
 
     st.subheader("🔁 Passwort zurücksetzen & 🗑️ Spieler löschen")
+    selected_ingame_reset = st.selectbox("Spieler auswählen", ingame_names_sorted, key="pw_reset_select")
+    reset_target = ingame_user_map[selected_ingame_reset]
     reset_pass = st.text_input("Neues Passwort für Spieler", key="reset_pass")
     if st.button("Passwort zurücksetzen"):
-        update_password(target_user, reset_pass)
-        st.success(f"Passwort von '{target_user}' zurückgesetzt")
+        update_password(reset_target, reset_pass)
+        st.success(f"Passwort von '{reset_target}' zurückgesetzt")
 
     if st.checkbox("⚠️ Spieler wirklich löschen?"):
         if st.button("❌ Spieler löschen"):
-            delete_user(target_user)
-            st.success(f"Spieler '{target_user}' gelöscht")
+            delete_user(reset_target)
+            st.success(f"Spieler '{reset_target}' gelöscht")
             st.experimental_rerun()
