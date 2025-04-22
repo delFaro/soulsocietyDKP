@@ -264,3 +264,4 @@ elif selected_page == "Admin" and user['is_admin']:
             "Gearscore": u.get('gearscore', ''),
             "DKP": dkp_data['points'] if dkp_data else 0,
             "Itemwünsche": ", ".join([f'{w["klasse"]}: {w["item"]}' for w in u.get('wish', [])]) if isinstance(u.get('wish'), list) else u.get('wish', '')
+        })
