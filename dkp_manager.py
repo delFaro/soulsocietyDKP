@@ -174,11 +174,11 @@ if selected_page == "Ranking":
     if my_user.get("class"):
         st.write(f"🧙 Klasse: **{my_user['class']}**")
     if my_user.get("gearscore"):
-        st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
-    if my_user.get("wish"):
-        st.write("🎁 Wunschliste:")
-        for w in my_user['wish']:
-            st.write(f"– {w}")
+    st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
+if my_user.get("wish"):
+    st.write("🎁 Wunschliste:")
+    for w in my_user['wish']:
+        st.write(f"– {w}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
@@ -263,4 +263,4 @@ elif selected_page == "Admin" and user['is_admin']:
             "Klasse": u.get('class', ''),
             "Gearscore": u.get('gearscore', ''),
             "DKP": dkp_data['points'] if dkp_data else 0,
-            "Itemwünsche": ", ".join(f"{w['klasse']}: {w['item']}" for w in u['wish']) if isinstance(u.get('wish'), list) else u.get('wish', '')
+            "Itemwünsche": ", ".join([f'{w["klasse"]}: {w["item"]}' for w in u.get('wish', [])]) if isinstance(u.get('wish'), list) else u.get('wish', '')
