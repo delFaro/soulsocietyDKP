@@ -174,12 +174,11 @@ if selected_page == "Ranking":
     if my_user.get("class"):
         st.write(f"🧙 Klasse: **{my_user['class']}**")
     if my_user.get("gearscore"):
-        st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
-    
-    if my_user.get("wish"):
-        st.write("🎁 Wunschliste:")
-        for w in my_user['wish']:
-            st.write(f"– {w}")
+    st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
+if my_user.get("wish"):
+    st.write("🎁 Wunschliste:")
+    for w in my_user['wish']:
+        st.write(f"– {w}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
@@ -264,18 +263,4 @@ elif selected_page == "Admin" and user['is_admin']:
             "Klasse": u.get('class', ''),
             "Gearscore": u.get('gearscore', ''),
             "DKP": dkp_data['points'] if dkp_data else 0,
-            "Itemwünsche": ", ".join(u['wish']) if isinstance(u.get('wish'), list) else u.get('wish', '')
-        })
-    overview_df = pd.DataFrame(overview_data)
-    st.dataframe(overview_df, use_container_width=True)
-
-    st.subheader("🔁 Spieler löschen")
-    deletable_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != 'superadmin']
-    selected_ingame_reset = st.selectbox("Spieler auswählen", deletable_candidates, key="pw_reset_select")
-    reset_target = ingame_user_map[selected_ingame_reset]
-
-    if st.checkbox("⚠️ Spieler wirklich löschen?"):
-        if st.button("❌ Spieler löschen"):
-            delete_user(reset_target)
-            st.success(f"Spieler '{reset_target}' gelöscht")
-            st.experimental_rerun()
+            "Itemwünsche": ", ".join(f"{w['klasse']}: {w['item']}" for w in u['wish']) if isinstance(u.get('wish'), list) else u.get('wish', '')
