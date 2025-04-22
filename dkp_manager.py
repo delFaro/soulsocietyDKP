@@ -216,6 +216,15 @@ elif selected_page == "Admin" and user['is_admin']:
         users_table.update({'is_admin': True}, Query().username == promote_target)
         st.success(f"'{promote_target}' ist jetzt Admin")
 
+    st.subheader("📝 Ingame-Namen bearbeiten")
+    editable_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != user['username']]
+    selected_edit_name = st.selectbox("Spieler auswählen (Ingame-Namen ändern)", editable_candidates, key="ingame_edit_select")
+    edit_target = ingame_user_map[selected_edit_name]
+    new_ingame_name = st.text_input("Neuer Ingame-Name", key="admin_new_ingame")
+    if st.button("Ingame-Name aktualisieren"):
+        update_ingame_name(edit_target, new_ingame_name)
+        st.success(f"Ingame-Name für '{edit_target}' wurde auf '{new_ingame_name}' geändert")
+
     st.subheader("📋 Alle Spieler im Überblick")
     all_users = users_table.all()
     overview_data = []
