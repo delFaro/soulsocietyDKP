@@ -142,27 +142,27 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
-    wish_item = st.text_input("🎯 Wunschitem hinzufügen")
-    if st.button("➕ Wunschitem hinzufügen") and wish_item:
+    wish_item = st.text_input("🎯 Wunschitem (Name, Link oder Info)")
+    if st.button("Wunschitem speichern"):
         user_data = get_user(user['username'])
-        wish_list = user_data.get('wish', [])
-        if not isinstance(wish_list, list):
-            wish_list = [wish_list] if wish_list else []
-        wish_list.append(wish_item)
-        user_data['wish'] = wish_list
+        user_data['wish'] = wish_item
         users_table.update(user_data, Query().username == user['username'])
-        st.success("Wunschitem hinzugefügt")
+        st.success("Wunschitem gespeichert")
+    new_pw = st.text_input("Neues Passwort", type="password")
+    if st.button("Passwort ändern"):
+        update_password(user['username'], new_pw)
+        st.success("Passwort aktualisiert")
 
-    current_wish_list = get_user(user['username']).get('wish', [])
-    if current_wish_list:
-        st.write("📝 Aktuelle Wunschliste:")
-        for i, item in enumerate(current_wish_list):
-            col1, col2 = st.columns([8, 1])
-            col1.write(f"{i+1}. {item}")
-            if col2.button("❌", key=f"remove_{i}"):
-                updated_list = current_wish_list[:i] + current_wish_list[i+1:]
-                users_table.update({'wish': updated_list}, Query().username == user['username'])
-                st.experimental_rerun()
+    new_ingame = st.text_input("Neuer Ingame-Name")
+    if st.button("Ingame-Name ändern"):
+        update_ingame_name(user['username'], new_ingame)
+        st.success("Ingame-Name aktualisiert")
+
+    new_class = st.text_input("Klasse")
+    new_score = st.text_input("Gearscore")
+    if st.button("Klasse & Gearscore speichern"):
+        update_class_and_gearscore(user['username'], new_class, new_score)
+        st.success("Klasse & Gearscore aktualisiert")
 
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
@@ -176,9 +176,7 @@ if selected_page == "Ranking":
     if my_user.get("gearscore"):
         st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
     if my_user.get("wish"):
-        st.write("🎁 Wunschliste:")
-    for w in my_user['wish']:
-        st.write(f"– {w}")
+        st.write(f"🎁 Wunschitem: {my_user['wish']}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
@@ -263,5 +261,18 @@ elif selected_page == "Admin" and user['is_admin']:
             "Klasse": u.get('class', ''),
             "Gearscore": u.get('gearscore', ''),
             "DKP": dkp_data['points'] if dkp_data else 0,
-            "Itemwünsche": ", ".join([f'{w["klasse"]}: {w["item"]}' for w in u.get('wish', [])]) if isinstance(u.get('wish'), list) else u.get('wish', '')
+            "Itemwunsch": u.get('wish', '')
         })
+    overview_df = pd.DataFrame(overview_data)
+    st.dataframe(overview_df, use_container_width=True)
+
+    st.subheader("🔁 Spieler löschen")
+    deletable_candidates = [name for name in ingame_names_sorted if ingame_user_map[name] != 'superadmin']
+    selected_ingame_reset = st.selectbox("Spieler auswählen", deletable_candidates, key="pw_reset_select")
+    reset_target = ingame_user_map[selected_ingame_reset]
+
+    if st.checkbox("⚠️ Spieler wirklich löschen?"):
+        if st.button("❌ Spieler löschen"):
+            delete_user(reset_target)
+            st.success(f"Spieler '{reset_target}' gelöscht")
+            st.experimental_rerun()
