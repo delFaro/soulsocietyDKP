@@ -159,9 +159,9 @@ if selected_page == "Ranking":
     if my_user.get("class"):
         st.write(f"🧙 Klasse: **{my_user['class']}**")
     if my_user.get("gearscore"):
-    st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
-if my_user.get("wish"):
-    st.write(f"🎁 Wunschitem: {my_user['wish']}")
+        st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
+    if my_user.get("wish"):
+        st.write(f"🎁 Wunschitem: {my_user['wish']}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
