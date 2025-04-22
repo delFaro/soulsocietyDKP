@@ -177,7 +177,7 @@ elif selected_page == "Admin" and user['is_admin']:
             st.experimental_rerun()
         if st.session_state.get("generated_password"):
             st.code(st.session_state.generated_password, language="text")
-            st.button("📋 Passwort kopieren", on_click=st.toast, args=("Passwort kopiert!",))
+            st.button("📋 Passwort kopieren", on_click=st.success, args=("Passwort kopiert!",))
 
     new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
