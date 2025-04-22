@@ -167,7 +167,17 @@ if selected_page == "Ranking":
 elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
-    new_pass = st.text_input("Standardpasswort")
+
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
+    with col2:
+        if st.button("🔐 Passwort generieren"):
+            st.session_state.generated_password = generate_password()
+            st.experimental_rerun()
+        if st.session_state.get("generated_password"):
+            st.code(st.session_state.generated_password, language="text")
+
     new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
     if st.button("Nutzer erstellen"):
@@ -175,6 +185,7 @@ elif selected_page == "Admin" and user['is_admin']:
             st.success(f"Nutzer '{new_user}' mit Ingame-Name '{new_ingame}' angelegt (PW: {new_pass})")
         else:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
+
 
     st.subheader("🔧 DKP Verwalten")
     all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
