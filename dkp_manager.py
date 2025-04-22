@@ -21,13 +21,14 @@ def authenticate(username, password):
         return user
     return None
 
-def create_user(username, password, is_admin=False):
+def create_user(username, password, is_admin=False, ingame_name=""):
     if users_table.contains(Query().username == username):
         return False
     users_table.insert({
         'username': username,
         'password_hash': hash_password(password),
-        'is_admin': is_admin
+        'is_admin': is_admin,
+        'ingame_name': ingame_name
     })
     dkp_table.insert({
         'username': username,
@@ -38,6 +39,9 @@ def create_user(username, password, is_admin=False):
 
 def update_password(username, new_password):
     users_table.update({'password_hash': hash_password(new_password)}, Query().username == username)
+
+def update_ingame_name(username, new_ingame_name):
+    users_table.update({'ingame_name': new_ingame_name}, Query().username == username)
 
 def get_user(username):
     return users_table.get(Query().username == username)
@@ -96,22 +100,28 @@ if st.sidebar.button("🔓 Logout"):
 
 st.title("🛡️ DKP System - Throne & Liberty")
 
-# Passwort ändern
-with st.expander("🔑 Passwort ändern"):
+# Passwort & Ingame-Namen ändern
+with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
         update_password(user['username'], new_pw)
         st.success("Passwort aktualisiert")
+
+    new_ingame = st.text_input("Neuer Ingame-Name")
+    if st.button("Ingame-Name ändern"):
+        update_ingame_name(user['username'], new_ingame)
+        st.success("Ingame-Name aktualisiert")
 
 # Admin-Bereich
 if user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
     new_pass = st.text_input("Standardpasswort")
+    new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
     if st.button("Nutzer erstellen"):
-        if create_user(new_user, new_pass, new_admin):
-            st.success(f"Nutzer '{new_user}' angelegt")
+        if create_user(new_user, new_pass, new_admin, new_ingame):
+            st.success(f"Nutzer '{new_user}' mit Ingame-Name '{new_ingame}' angelegt")
         else:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
 
@@ -126,16 +136,20 @@ if user['is_admin']:
 # Spieleransicht
 st.header("📋 Mein DKP")
 my_dkp = get_dkp(user['username'])
+my_ingame = get_user(user['username']).get("ingame_name", "")
 st.write(f"💠 Aktueller Stand: **{my_dkp['points']} DKP**")
+if my_ingame:
+    st.write(f"🎮 Ingame-Name: **{my_ingame}**")
 
 # Rangliste aller Spieler
 st.header("📊 DKP Rangliste")
 dkp_list = dkp_table.all()
-df = pd.DataFrame([{ "Spieler": d["username"], "DKP": d["points"] } for d in dkp_list])
+user_dict = {u['username']: u.get('ingame_name', '') for u in users_table.all()}
+df = pd.DataFrame([{ "Benutzer": d["username"], "Ingame-Name": user_dict.get(d["username"], "-"), "DKP": d["points"] } for d in dkp_list])
 df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
 df.index += 1
 
-highlight_index = df[df["Spieler"] == user["username"]].index[0] + 1
+highlight_index = df[df["Benutzer"] == user["username"]].index[0] + 1
 st.markdown(f"🏅 **Dein Rang:** Platz {highlight_index} von {len(df)}")
 st.dataframe(df, use_container_width=True)
 
