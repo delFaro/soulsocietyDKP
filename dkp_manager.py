@@ -28,7 +28,9 @@ def create_user(username, password, is_admin=False, ingame_name=""):
         'username': username,
         'password_hash': hash_password(password),
         'is_admin': is_admin,
-        'ingame_name': ingame_name
+        'ingame_name': ingame_name,
+        'class': '',
+        'gearscore': ''
     })
     dkp_table.insert({
         'username': username,
@@ -42,6 +44,9 @@ def update_password(username, new_password):
 
 def update_ingame_name(username, new_ingame_name):
     users_table.update({'ingame_name': new_ingame_name}, Query().username == username)
+
+def update_class_and_gearscore(username, new_class, new_score):
+    users_table.update({'class': new_class, 'gearscore': new_score}, Query().username == username)
 
 def delete_user(username):
     users_table.remove(Query().username == username)
@@ -110,7 +115,7 @@ selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
 st.title("🛡️ DKP System - Throne & Liberty")
 
-# Passwort & Ingame-Namen ändern
+# Passwort, Ingame-Namen, Klasse & Gearscore ändern
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
@@ -122,24 +127,37 @@ with st.expander("🔑 Einstellungen"):
         update_ingame_name(user['username'], new_ingame)
         st.success("Ingame-Name aktualisiert")
 
+    new_class = st.text_input("Klasse")
+    new_score = st.text_input("Gearscore")
+    if st.button("Klasse & Gearscore speichern"):
+        update_class_and_gearscore(user['username'], new_class, new_score)
+        st.success("Klasse & Gearscore aktualisiert")
+
 # Seiteninhalt
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
     my_dkp = get_dkp(user['username'])
-    my_ingame = get_user(user['username']).get("ingame_name", "")
+    my_user = get_user(user['username'])
     st.write(f"💠 Aktueller Stand: **{my_dkp['points']} DKP**")
-    if my_ingame:
-        st.write(f"🎮 Ingame-Name: **{my_ingame}**")
+    if my_user.get("ingame_name"):
+        st.write(f"🎮 Ingame-Name: **{my_user['ingame_name']}**")
+    if my_user.get("class"):
+        st.write(f"🧙 Klasse: **{my_user['class']}**")
+    if my_user.get("gearscore"):
+        st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
-    user_dict = {u['username']: u.get('ingame_name', '') for u in users_table.all()}
-    df = pd.DataFrame([{ "Benutzer": d["username"], "Ingame-Name": user_dict.get(d["username"], "-"), "DKP": d["points"] } for d in dkp_list])
+    user_info = {u['username']: u for u in users_table.all()}
+    df = pd.DataFrame([{ 
+        "Ingame-Name": user_info[u['username']].get('ingame_name', '-'),
+        "Klasse": user_info[u['username']].get('class', ''),
+        "Gearscore": user_info[u['username']].get('gearscore', ''),
+        "DKP": u['points']
+    } for u in dkp_list])
     df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
     df.index += 1
 
-    highlight_index = df[df["Benutzer"] == user["username"]].index[0] + 1
-    st.markdown(f"🏅 **Dein Rang:** Platz {highlight_index} von {len(df)}")
     st.dataframe(df, use_container_width=True)
 
     st.subheader("📜 Verlauf")
