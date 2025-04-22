@@ -142,12 +142,27 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
-    wish_item = st.text_input("🎯 Wunschitem (Name, Link oder Info)")
-    if st.button("Wunschitem speichern"):
+    wish_item = st.text_input("🎯 Wunschitem hinzufügen")
+    if st.button("➕ Wunschitem hinzufügen") and wish_item:
         user_data = get_user(user['username'])
-        user_data['wish'] = wish_item
+        wish_list = user_data.get('wish', [])
+        if not isinstance(wish_list, list):
+            wish_list = [wish_list] if wish_list else []
+        wish_list.append(wish_item)
+        user_data['wish'] = wish_list
         users_table.update(user_data, Query().username == user['username'])
-        st.success("Wunschitem gespeichert")
+        st.success("Wunschitem hinzugefügt")
+
+    current_wish_list = get_user(user['username']).get('wish', [])
+    if current_wish_list:
+        st.write("📝 Aktuelle Wunschliste:")
+        for i, item in enumerate(current_wish_list):
+            col1, col2 = st.columns([8, 1])
+            col1.write(f"{i+1}. {item}")
+            if col2.button("❌", key=f"remove_{i}"):
+                updated_list = current_wish_list[:i] + current_wish_list[i+1:]
+                users_table.update({'wish': updated_list}, Query().username == user['username'])
+                st.experimental_rerun()
 
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
@@ -161,7 +176,9 @@ if selected_page == "Ranking":
     if my_user.get("gearscore"):
     st.write(f"🛡️ Gearscore: **{my_user['gearscore']}**")
 if my_user.get("wish"):
-    st.write(f"🎁 Wunschitem: {my_user['wish']}")
+    st.write("🎁 Wunschliste:")
+    for w in my_user['wish']:
+        st.write(f"– {w}")
 
     st.header("📊 DKP Rangliste")
     dkp_list = dkp_table.all()
@@ -246,7 +263,7 @@ elif selected_page == "Admin" and user['is_admin']:
             "Klasse": u.get('class', ''),
             "Gearscore": u.get('gearscore', ''),
             "DKP": dkp_data['points'] if dkp_data else 0,
-            "Itemwunsch": u.get('wish', '')
+            "Itemwünsche": ", ".join(u['wish']) if isinstance(u.get('wish'), list) else u.get('wish', '')
         })
     overview_df = pd.DataFrame(overview_data)
     st.dataframe(overview_df, use_container_width=True)
