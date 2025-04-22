@@ -75,11 +75,9 @@ def generate_password(length=10):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
-# Session Management
 if 'user' not in st.session_state:
     st.session_state.user = None
 
-# 🛠️ Initial Setup - Admin anlegen, falls keine User existieren
 if len(users_table) == 0:
     st.title("🚀 Erst-Setup: Admin-Account anlegen")
     admin_user = st.text_input("Admin Benutzername")
@@ -92,7 +90,6 @@ if len(users_table) == 0:
             st.error("Benutzer existiert bereits")
     st.stop()
 
-# Login
 if not st.session_state.user:
     st.title("🔐 DKP Login")
     username = st.text_input("Benutzername")
@@ -106,14 +103,12 @@ if not st.session_state.user:
             st.error("Login fehlgeschlagen")
     st.stop()
 
-# App nach Login
 user = st.session_state.user
 st.sidebar.write(f"👋 Eingeloggt als: {user['username']} ({'Admin' if user['is_admin'] else 'Spieler'})")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
-# Navigation
 pages = ["Ranking"]
 if user['is_admin']:
     pages.append("Admin")
@@ -121,7 +116,6 @@ selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
 st.title("🛡️ DKP System - Throne & Liberty")
 
-# Passwort, Ingame-Namen, Klasse & Gearscore ändern
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
@@ -139,7 +133,6 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
-# Seiteninhalt
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
     my_dkp = get_dkp(user['username'])
