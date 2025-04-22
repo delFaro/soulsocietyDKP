@@ -75,9 +75,11 @@ def generate_password(length=10):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
+# Session Management
 if 'user' not in st.session_state:
     st.session_state.user = None
 
+# Erst-Setup
 if len(users_table) == 0:
     st.title("🚀 Erst-Setup: Admin-Account anlegen")
     admin_user = st.text_input("Admin Benutzername")
@@ -90,6 +92,7 @@ if len(users_table) == 0:
             st.error("Benutzer existiert bereits")
     st.stop()
 
+# Login
 if not st.session_state.user:
     st.title("🔐 DKP Login")
     username = st.text_input("Benutzername")
@@ -103,12 +106,14 @@ if not st.session_state.user:
             st.error("Login fehlgeschlagen")
     st.stop()
 
+# App-Inhalt
 user = st.session_state.user
 st.sidebar.write(f"👋 Eingeloggt als: {user['username']} ({'Admin' if user['is_admin'] else 'Spieler'})")
 if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
+# Navigation
 pages = ["Ranking"]
 if user['is_admin']:
     pages.append("Admin")
@@ -116,6 +121,7 @@ selected_page = st.sidebar.radio("🔍 Navigation", pages)
 
 st.title("🛡️ DKP System - Throne & Liberty")
 
+# Einstellungen
 with st.expander("🔑 Einstellungen"):
     new_pw = st.text_input("Neues Passwort", type="password")
     if st.button("Passwort ändern"):
@@ -133,6 +139,7 @@ with st.expander("🔑 Einstellungen"):
         update_class_and_gearscore(user['username'], new_class, new_score)
         st.success("Klasse & Gearscore aktualisiert")
 
+# Ranking
 if selected_page == "Ranking":
     st.header("📋 Mein DKP")
     my_dkp = get_dkp(user['username'])
@@ -156,7 +163,6 @@ if selected_page == "Ranking":
     } for u in dkp_list])
     df = df.sort_values(by="DKP", ascending=False).reset_index(drop=True)
     df.index += 1
-
     st.dataframe(df, use_container_width=True)
 
     st.subheader("📜 Verlauf")
@@ -164,6 +170,7 @@ if selected_page == "Ranking":
         ts = datetime.fromisoformat(entry['timestamp']).strftime('%d.%m.%Y %H:%M')
         st.write(f"[{ts}] {entry['by']} -> {entry['points']} Punkte ({'vergeben' if entry['points'] >= 0 else 'abgezogen'})")
 
+# Admin-Bereich
 elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
@@ -171,14 +178,13 @@ elif selected_page == "Admin" and user['is_admin']:
     col1, col2 = st.columns([2, 1])
     with col1:
         new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
-        
-     with col2:
+    with col2:
         generate_pw = st.button("🔐 Passwort generieren")
-    
+
     if generate_pw:
         st.session_state.generated_password = generate_password()
         st.experimental_rerun()
-    
+
     if st.session_state.get("generated_password"):
         st.code(st.session_state.generated_password, language="text")
 
@@ -189,7 +195,6 @@ elif selected_page == "Admin" and user['is_admin']:
             st.success(f"Nutzer '{new_user}' mit Ingame-Name '{new_ingame}' angelegt (PW: {new_pass})")
         else:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
-
 
     st.subheader("🔧 DKP Verwalten")
     all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
