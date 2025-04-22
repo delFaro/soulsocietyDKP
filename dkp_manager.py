@@ -98,7 +98,7 @@ if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
-st.title("🛡️ DKP System - Throne & Liberty")
+st.title("🛡️ Soul ツ Society - DKP System")
 
 # Passwort & Ingame-Namen ändern
 with st.expander("🔑 Einstellungen"):
