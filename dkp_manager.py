@@ -43,6 +43,10 @@ def update_password(username, new_password):
 def update_ingame_name(username, new_ingame_name):
     users_table.update({'ingame_name': new_ingame_name}, Query().username == username)
 
+def delete_user(username):
+    users_table.remove(Query().username == username)
+    dkp_table.remove(Query().username == username)
+
 def get_user(username):
     return users_table.get(Query().username == username)
 
@@ -98,7 +102,7 @@ if st.sidebar.button("🔓 Logout"):
     st.session_state.user = None
     st.experimental_rerun()
 
-st.title("🛡️ Soul ツ Society - DKP System")
+st.title("🛡️ DKP System - Throne & Liberty")
 
 # Passwort & Ingame-Namen ändern
 with st.expander("🔑 Einstellungen"):
@@ -126,12 +130,24 @@ if user['is_admin']:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
 
     st.subheader("🔧 DKP Verwalten")
-    all_users = [u['username'] for u in users_table.all()]
+    all_users = [u['username'] for u in users_table.all() if u['username'] != user['username']]
     target_user = st.selectbox("Spieler auswählen", all_users)
-    points = st.number_input("Punkte (positiv/negativ)", value=0)
-    if st.button("Anwenden"):
+    points = st.number_input("Punkte (positiv/negativ)", value=0, key="dkp_change")
+    if st.button("Anwenden", key="change_dkp"):
         update_dkp(target_user, points, user['username'])
         st.success(f"{points} Punkte bei {target_user} geändert")
+
+    st.subheader("🔁 Passwort zurücksetzen & 🗑️ Spieler löschen")
+    reset_pass = st.text_input("Neues Passwort für Spieler", key="reset_pass")
+    if st.button("Passwort zurücksetzen"):
+        update_password(target_user, reset_pass)
+        st.success(f"Passwort von '{target_user}' zurückgesetzt")
+
+    if st.checkbox("⚠️ Spieler wirklich löschen?"):
+        if st.button("❌ Spieler löschen"):
+            delete_user(target_user)
+            st.success(f"Spieler '{target_user}' gelöscht")
+            st.experimental_rerun()
 
 # Spieleransicht
 st.header("📋 Mein DKP")
