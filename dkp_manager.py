@@ -172,6 +172,7 @@ if selected_page == "Ranking":
 
 # Admin-Bereich
 elif selected_page == "Admin" and user['is_admin']:
+    
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
 
@@ -179,11 +180,8 @@ elif selected_page == "Admin" and user['is_admin']:
     with col1:
         new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
     with col2:
-        generate_pw = st.button("🔐 Passwort generieren")
-
-    if generate_pw:
-        st.session_state.generated_password = generate_password()
-        st.experimental_rerun()
+        if st.button("🔐 Passwort generieren", key="generate_pw"):
+            st.session_state.generated_password = generate_password()
 
     if st.session_state.get("generated_password"):
         st.code(st.session_state.generated_password, language="text")
