@@ -3,6 +3,8 @@ from tinydb import TinyDB, Query
 from hashlib import sha256
 from datetime import datetime
 import pandas as pd
+import random
+import string
 
 # Datenbank-Datei
 DB_FILE = 'dkp_tinydb.json'
@@ -68,6 +70,10 @@ def update_dkp(username, amount, by_user):
         'timestamp': datetime.now().isoformat()
     })
     dkp_table.update(record, Query().username == username)
+
+def generate_password(length=10):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
 
 # Session Management
 if 'user' not in st.session_state:
@@ -168,12 +174,14 @@ if selected_page == "Ranking":
 elif selected_page == "Admin" and user['is_admin']:
     st.header("👑 Admin Panel")
     new_user = st.text_input("Neuen Nutzer anlegen")
-    new_pass = st.text_input("Standardpasswort")
+    if st.button("🔐 Passwort generieren"):
+        st.session_state.generated_password = generate_password()
+    new_pass = st.text_input("Standardpasswort", value=st.session_state.get("generated_password", ""))
     new_ingame = st.text_input("Ingame-Name")
     new_admin = st.checkbox("Als Admin anlegen")
     if st.button("Nutzer erstellen"):
         if create_user(new_user, new_pass, new_admin, new_ingame):
-            st.success(f"Nutzer '{new_user}' mit Ingame-Name '{new_ingame}' angelegt")
+            st.success(f"Nutzer '{new_user}' mit Ingame-Name '{new_ingame}' angelegt (PW: {new_pass})")
         else:
             st.warning(f"Nutzer '{new_user}' existiert bereits")
 
